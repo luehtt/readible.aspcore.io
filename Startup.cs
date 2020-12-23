@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +11,7 @@ using Newtonsoft.Json;
 using Readible.Migrations;
 using Readible.Models;
 using Readible.Services;
+using Readible.Services.Hub;
 
 namespace Readible
 {
@@ -53,8 +55,14 @@ namespace Readible
             // Set up CORS for your application add the Microsoft.AspNetCore.Cors package to your project
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowOrigin",
-                    builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+                options.AddPolicy("AllowOrigin", builder => builder.SetIsOriginAllowed(_ => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+            });
+
+            // Set up SignalR
+            services.AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = true;
+                options.KeepAliveInterval = TimeSpan.FromMinutes(int.Parse(Configuration["SignalR:IntervalMinutes"]));
             });
 
             // Set up service for EF Core
@@ -66,6 +74,10 @@ namespace Readible
             services.AddTransient<ManagerService>();
             services.AddTransient<OrderService>();
             services.AddTransient<MigrationService>();
+
+            // Set up service for SignalR
+            services.AddTransient<OrderHub>();
+            services.AddTransient<BookCommentHub>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -82,7 +94,15 @@ namespace Readible
             // Set up CORS for your application add the Microsoft.AspNetCore.Cors package to your project
             app.UseCors("AllowOrigin");
 
-            app.UseHttpsRedirection();
+            // Setting up route for SignalR hubs
+            app.UseSignalR(endpoints =>
+            {
+                endpoints.MapHub<OrderHub>("/hub/orders");
+                endpoints.MapHub<BookCommentHub>("/hub/comments");
+            });
+
+            app.UseWebSockets();
+            // app.UseHttpsRedirection();
             app.UseMvc();
         }
     }
