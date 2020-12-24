@@ -38,7 +38,7 @@ namespace Readible.Services
             return await context.Managers.AsNoTracking().CountAsync();
         }
 
-        public async Task<Manager> Get(int id)
+        public async Task<Manager> GetDetail(int id)
         {
             var item = await context.Managers.AsNoTracking().Where(e => e.UserId == id)
                 .Include(e => e.ConfirmedOrders).ThenInclude(f => f.Status)

@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
-using Readible.services.hub;
+using Microsoft.AspNetCore.Authorization;
 
-namespace Readible.Services.Hub
+
+namespace Readible.Hub
 {
-    public class BookCommentHub : Microsoft.AspNetCore.SignalR.Hub, IHubContextService<BookComment>
+    public class BookCommentHub : Microsoft.AspNetCore.SignalR.Hub, IDataContextHub<BookComment>
     {
         protected IHubContext<BookCommentHub> context;
 
@@ -16,19 +17,20 @@ namespace Readible.Services.Hub
         {
             this.context = context;
         }
+
         public Task Delete(int id)
         {
-            throw new NotImplementedException();
+            return context.Clients.All.SendAsync("BookCommentDelete", id);
         }
 
         public Task Store(BookComment data)
         {
-            throw new NotImplementedException();
+            return context.Clients.All.SendAsync("BookCommentStore", data);
         }
 
         public Task Update(BookComment data)
         {
-            throw new NotImplementedException();
+            return context.Clients.All.SendAsync("BookCommentUpdate", data);
         }
     }
 }

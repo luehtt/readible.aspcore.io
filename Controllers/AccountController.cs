@@ -30,12 +30,12 @@ namespace Readible.Controllers
                 {
                     case USER_ROLE_ADMIN:
                     case USER_ROLE_MANAGER:
-                        user = await service.Get(user.Id);
-                        var manager = await managerService.Get(user.Id);
+                        user = await service.GetDetail(user.Id);
+                        var manager = await managerService.GetDetail(user.Id);
                         return Ok(new { user, data = manager });
                     case USER_ROLE_CUSTOMER:
-                        user = await service.Get(user.Id);
-                        var customer = await customerService.Get(user.Id);
+                        user = await service.GetDetail(user.Id);
+                        var customer = await customerService.GetDetail(user.Id);
                         return Ok( new {user, data = customer} );
                     default:
                         return Unauthorized(FORBIDDEN);

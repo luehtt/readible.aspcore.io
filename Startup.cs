@@ -11,7 +11,8 @@ using Newtonsoft.Json;
 using Readible.Migrations;
 using Readible.Models;
 using Readible.Services;
-using Readible.Services.Hub;
+using Readible.Hub;
+using Readible.Hubs;
 
 namespace Readible
 {
@@ -98,6 +99,7 @@ namespace Readible
             app.UseSignalR(endpoints =>
             {
                 endpoints.MapHub<OrderHub>("/hub/orders");
+                endpoints.MapHub<CustomerOrderHub>("/hub/orders/customer");
                 endpoints.MapHub<BookCommentHub>("/hub/comments");
             });
 

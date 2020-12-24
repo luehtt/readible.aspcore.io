@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Readible.Hub;
 using Readible.Models;
 using Readible.Shared;
 
@@ -11,10 +12,12 @@ namespace Readible.Services
     public class BookCommentService : DataContextService, IDataContextService<BookComment>
     {
         private readonly DataContext context;
+        private readonly BookCommentHub bookCommentHub;
 
-        public BookCommentService(DataContext context)
+        public BookCommentService(DataContext context, BookCommentHub bookCommentHub)
         {
             this.context = context;
+            this.bookCommentHub = bookCommentHub;
         }
 
         public async Task<BookComment> Delete(int id)
@@ -25,6 +28,7 @@ namespace Readible.Services
             context.BookComments.Remove(item);
             await context.SaveChangesAsync();
 
+            _ = bookCommentHub.Delete(id);
             return item;
         }
         
@@ -37,6 +41,7 @@ namespace Readible.Services
             context.BookComments.Remove(item);
             await context.SaveChangesAsync();
 
+            _ = bookCommentHub.Delete(id);
             return item;
         }
 
@@ -59,8 +64,7 @@ namespace Readible.Services
                     Customer = new Customer { UserId = e.Customer.UserId, Fullname = e.Customer.Fullname},
                     CreatedAt = e.CreatedAt,
                     UpdatedAt = e.UpdatedAt
-                })
-                .ToListAsync();
+                }).ToListAsync();
         }
 
         public async Task<int> Count()
@@ -68,7 +72,7 @@ namespace Readible.Services
             return await context.BookComments.AsNoTracking().CountAsync();
         }
 
-        public async Task<BookComment> Get(int id)
+        public async Task<BookComment> GetDetail(int id)
         {
             var item = await context.BookComments.AsNoTracking().Include(e => e.Customer).FirstOrDefaultAsync(e => e.Id == id);
             CatchNotFound(item);
@@ -88,7 +92,10 @@ namespace Readible.Services
             
 			context.BookComments.Add(data);
             await context.SaveChangesAsync();
-			return await context.BookComments.AsNoTracking().Include(e => e.Customer).FirstOrDefaultAsync(e => e.Id == data.Id);  
+
+            var res = await GetDetail(data.Id);
+            _ = bookCommentHub.Store(res);
+            return res;
         }
 
         public async Task<BookComment> Update(int id, BookComment data)
@@ -103,7 +110,9 @@ namespace Readible.Services
             item.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
-            return item;
+            var res = await GetDetail(data.Id);
+            _ = bookCommentHub.Update(res);
+            return res;
         }
 
         public Task<BookComment> Update(string id, BookComment data)

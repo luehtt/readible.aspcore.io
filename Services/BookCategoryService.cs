@@ -45,7 +45,7 @@ namespace Readible.Services
             return await context.BookCategories.AsNoTracking().CountAsync();
         }
 
-        public async Task<BookCategory> Get(int id)
+        public async Task<BookCategory> GetDetail(int id)
         {
             var item = await context.BookCategories.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
             CatchNotFound(item);

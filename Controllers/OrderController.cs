@@ -18,7 +18,7 @@ namespace Readible.Controllers
     {
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> Get([FromServices] OrderService service,
+        public async Task<IActionResult> Fetch([FromServices] OrderService service,
             [FromServices] UserService userService,
             [FromQuery(Name = QUERY_STATUS)] string status)
         {
@@ -64,10 +64,10 @@ namespace Readible.Controllers
                 {
                     case USER_ROLE_ADMIN:
                     case USER_ROLE_MANAGER:
-                        item = await service.Get(id);
+                        item = await service.GetDetail(id);
                         return Ok(item);
                     case USER_ROLE_CUSTOMER:
-                        item = await service.Get(id, user.Id);
+                        item = await service.GetDetail(id, user.Id);
                         return Ok(item);
                     default:
                         return StatusCode(FORBIDDEN_CODE, FORBIDDEN);
@@ -95,7 +95,7 @@ namespace Readible.Controllers
             {
                 var user = await userService.GetUserPrincipal(User);
                 input.CustomerId = user.Id;
-                var item = await service.Store(input);
+                var item = await service.Store(input, user.ConnectId);
                 return Ok(item);
             }
             catch (HttpResponseException err)
@@ -118,8 +118,8 @@ namespace Readible.Controllers
             try
             {
                 var user = userService.GetUserPrincipal(User);
-                var item = status == null ? await service.Update(id, input) : await service.Update(id, input, status, user.Id);
-                return Ok(item);
+                if (status == null) return Ok(await service.Update(id, input));
+                return Ok(await service.Update(id, input, status, user.Id));
             }
             catch (HttpResponseException err)
             {

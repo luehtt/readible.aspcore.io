@@ -20,6 +20,7 @@ namespace Readible.Models
         public string Password { get; set; }
 
         [Required] [Column("active")] public bool Active { get; set; }
+        [Required] [Column("connect_id")] public string ConnectId { get; set; }
 
         [Required] [Column("user_role_id")] public int UserRoleId { get; set; }
 

@@ -16,6 +16,7 @@ namespace Readible.Migrations
             Add(new DbTableColumn("username", "varchar(32)").Unique().NotNull());
             Add(new DbTableColumn("email", "varchar(255)").Unique().NotNull());
             Add(new DbTableColumn("password", "varchar(255)").NotNull());
+            Add(new DbTableColumn("connect_id", "varchar(64)").NotNull());
             Add(new DbTableColumn("active", "boolean").Default("true").NotNull());
             Add(new DbTableColumn("user_role_id", "integer").NotNull());
             AddTimestamp();

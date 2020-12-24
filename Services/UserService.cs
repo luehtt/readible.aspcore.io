@@ -52,7 +52,7 @@ namespace Readible.Services
             };
         }
 
-        public async Task<User> Get(int id)
+        public async Task<User> GetDetail(int id)
         {
             var item = await context.Users.AsNoTracking().Where(e => e.Id == id).Select(x => SelectUser(x)).FirstOrDefaultAsync();
             CatchNotFound(item);
@@ -190,7 +190,6 @@ namespace Readible.Services
             var email = loginPrincipal.FindFirst(ClaimTypes.Email).Value;
             var user = await context.Users.Where(x => x.Email == email).Include(x => x.UserRole).FirstOrDefaultAsync();
             CatchNotFound(user, FORBIDDEN_CODE);
-
             return user;
         }
 
