@@ -7,7 +7,7 @@ namespace Readible.Services
     {
         Task<IEnumerable<T>> Fetch();
         Task<int> Count();
-        Task<T> Get(int id);
+        Task<T> GetDetail(int id);
         Task<T> Get(string id);
         Task<T> Store(T data);
         Task<T> Update(int id, T data);

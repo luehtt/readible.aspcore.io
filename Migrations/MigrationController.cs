@@ -6,11 +6,11 @@ using static Readible.Shared.HttpStatus;
 
 namespace Readible.Migrations
 {
-    [Route("api")]
+    [Route("migration")]
     [ApiController]
     public class MigrationController : ControllerBase
     {
-        [HttpGet("migrate")]
+        [HttpGet("run")]
         public IActionResult Migration([FromServices] MigrationService service)
         {
             try

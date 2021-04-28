@@ -56,6 +56,7 @@ namespace Readible.Auth
 				UserId = user.Id,
                 Username = user.Username,
                 Email = user.Email,
+                ConnectId = user.ConnectId,
                 UserRole = userRole.Name
             };
 
@@ -70,6 +71,7 @@ namespace Readible.Auth
             {
                 new Claim(ClaimTypes.Role, user.UserRole),
                 new Claim(ClaimTypes.Expiration, expires.ToString(CultureInfo.InvariantCulture)),
+                new Claim(ClaimTypes.NameIdentifier, user.ConnectId),
 				new Claim(JwtRegisteredClaimNames.NameId, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.Username),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),

@@ -52,7 +52,7 @@ namespace Readible.Services
             return item;
         }
 
-        public Task<Book> Get(int id)
+        public Task<Book> GetDetail(int id)
         {
             throw new NotImplementedException();
         }

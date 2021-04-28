@@ -39,8 +39,8 @@ namespace Readible.Controllers
         {
             try
             {
-                var manager = await service.Get(id);
-                var user = await userService.Get(id);
+                var manager = await service.GetDetail(id);
+                var user = await userService.GetDetail(id);
 
                 var json = new {manager, user};
                 return Ok(json);

@@ -77,7 +77,8 @@ namespace Readible.Migrations.DataSeeders
                     Active = true,
                     UserRoleId = i < totalAdmin ? 1 : i < totalAdmin + totalManager ? 2 : 3,
                     CreatedAt = userModels[i].Timestamp,
-                    UpdatedAt = userModels[i].Timestamp
+                    UpdatedAt = userModels[i].Timestamp,
+                    ConnectId = Guid.NewGuid().ToString()
                 };
                 list.Add(item);
             }

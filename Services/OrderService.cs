@@ -7,59 +7,26 @@ using Readible.Models;
 using Readible.Shared;
 using static Readible.Shared.HttpStatus;
 using static Readible.Shared.Const;
+using Readible.Hub;
 
 namespace Readible.Services
 {
     public class OrderService : DataContextService, IDataContextService<Order>
     {
         private readonly DataContext context;
+        private readonly OrderHub orderHub;
+        private readonly CustomerOrderHub customerHub;
 
-        public OrderService(DataContext context)
+        public OrderService(DataContext context, OrderHub orderHub, CustomerOrderHub customerOrderHub)
         {
             this.context = context;
-        }
-
-        public async Task<Order> Delete(int id)
-        {
-            var item = await context.Orders.FindAsync(id);
-            CatchNotFound(item);
-
-            // ef core sucks for not having rows delete query effectively
-            // unless someone want to write raw sql
-            context.OrderDetails.RemoveRange(context.OrderDetails.Where(e => e.OrderId == item.Id));
-            context.Orders.Remove(item);
-            await context.SaveChangesAsync();
-
-            return item;
-        }
-
-        public Task<Order> Delete(string id)
-        {
-            throw new NotImplementedException();
+            this.orderHub = orderHub;
+            this.customerHub = customerOrderHub;
         }
 
         public async Task<int> Count()
         {
             return await context.Orders.AsNoTracking().CountAsync();
-        }
-
-        public Task<Order> Get(string id)
-        {
-            throw new NotImplementedException();
-        }
-
-        private async Task<OrderStatus> GetOrderStatus(string statusName)
-        {
-            var item = await context.OrderStatuses.AsNoTracking().FirstOrDefaultAsync(x => x.Name == statusName);
-            CatchNotFound(item);
-            return item;
-        }
-
-        private async Task<Book> GetBook(string isbn)
-        {
-            var item = await context.Books.AsNoTracking().FirstOrDefaultAsync(x => x.Isbn == isbn);
-            CatchNotFound(item);
-            return item;
         }
         
         public async Task<Order> Store(Order data)
@@ -101,9 +68,11 @@ namespace Readible.Services
                     }
 
                     await context.SaveChangesAsync();
-
                     transaction.Commit();
-                    return item;
+
+                    var res = await Get(item.Id);
+                    _ = orderHub.Store(res);
+                    return res;
                 }
                 catch (Exception err)
                 {
@@ -111,6 +80,13 @@ namespace Readible.Services
                     throw new HttpResponseException(SERVER_ERROR_CODE, err.Message);
                 }
             }
+        }
+
+        public async Task<Order> Store(Order data, string connectId)
+        {
+            var item = await Store(data);
+            _ = customerHub.Store(connectId, item);
+            return item;
         }
 
         public async Task<Order> Update(int id, Order data)
@@ -129,22 +105,26 @@ namespace Readible.Services
             item.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
-            return item;
+
+            var res = await Get(id);
+            _ = orderHub.Update(res);
+            return res;
         }
         
         public async Task<Order> Update(int id, Order data, string statusName, int managerId)
         {
             CatchCondition(id != data.Id);
 
-            var item = await context.Orders.Where(e => e.Id == id).FirstOrDefaultAsync();
+            var item = await context.Orders.Where(e => e.Id == id).Include(x => x.Status).FirstOrDefaultAsync();
             CatchNotFound(item);
             CatchTimestampMismatched(data.UpdatedAt, item.UpdatedAt);
 
             var status = await GetOrderStatus(statusName.ToUpper());
+            var originStatus = item.Status.Name;
 			var timestamp = DateTime.UtcNow;
             item.StatusId = status.Id;
             item.UpdatedAt = timestamp;
-            
+
             switch (status.Name)
             {
                 case "PENDING":
@@ -167,12 +147,13 @@ namespace Readible.Services
             }
 
             await context.SaveChangesAsync();
+            item.Status = status;
 
-            var res = await context.Orders.AsNoTracking().Where(x => x.Id == id)
-                .Include(x => x.Status)
-                .Include(x => x.ConfirmedManager)
-                .Include(x => x.CompletedManager)
-                .FirstOrDefaultAsync();
+            // send broadcast to manager and use having the order
+            var user = await context.Users.FirstOrDefaultAsync(x => x.Id == item.CustomerId);
+            var res = await Get(id);
+            _ = orderHub.Update(res);
+            _ = customerHub.Update(user.ConnectId, res);
             return res;
         }
 
@@ -181,12 +162,35 @@ namespace Readible.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<Order>> Fetch()
+        public async Task<Order> Get(int id)
         {
-            return await context.Orders.AsNoTracking().Include(x => x.Status).Include(x => x.Customer).ToListAsync();
+            var item = await context.Orders.AsNoTracking().Where(x => x.Id == id)
+                .Include(x => x.Status)
+                .Include(x => x.Customer)
+                .Include(x => x.ConfirmedManager)
+                .Include(x => x.CompletedManager)
+                .FirstOrDefaultAsync();
+            CatchNotFound(item);
+            return item;
         }
 
-        public async Task<Order> Get(int id)
+        public async Task<Order> GetDetail(int id, int customerId)
+        {
+            var item = await context.Orders.AsNoTracking().Where(x => x.Id == id).Where(x => x.CustomerId == customerId)
+                .Include(x => x.Status)
+                .Include(x => x.Customer)
+                .Include(x => x.OrderDetails).ThenInclude(y => y.Book)
+                .FirstOrDefaultAsync();
+            CatchNotFound(item);
+            return item;
+        }
+
+        public Task<Order> Get(string id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Order> GetDetail(int id)
         {
             var item = await context.Orders.AsNoTracking().Where(x => x.Id == id)
                 .Include(x => x.Status)
@@ -205,9 +209,41 @@ namespace Readible.Services
             return await context.Orders.CountAsync(x => x.StatusId == status.Id);
         }
 
+        private async Task<OrderStatus> GetOrderStatus(string statusName)
+        {
+            var item = await context.OrderStatuses.AsNoTracking().FirstOrDefaultAsync(x => x.Name == statusName);
+            CatchNotFound(item);
+            return item;
+        }
+
+        private async Task<Book> GetBook(string isbn)
+        {
+            var item = await context.Books.AsNoTracking().FirstOrDefaultAsync(x => x.Isbn == isbn);
+            CatchNotFound(item);
+            return item;
+        }
+
+        public async Task<Order> Delete(int id)
+        {
+            var item = await context.Orders.FindAsync(id);
+            CatchNotFound(item);
+
+            // ef core sucks for not having rows delete query effectively
+            // unless someone want to write raw sql
+            context.OrderDetails.RemoveRange(context.OrderDetails.Where(e => e.OrderId == item.Id));
+            context.Orders.Remove(item);
+
+            await context.SaveChangesAsync();
+            var user = await context.Users.FirstOrDefaultAsync(x => x.Id == item.CustomerId);
+            _ = customerHub.Delete(user.ConnectId, id);
+            _ = orderHub.Delete(id);
+            return item;
+        }
+
         public async Task<Order> Delete(int id, int customerId)
         {
-            var item = await context.Orders.Where(x => x.CustomerId == customerId).FirstOrDefaultAsync(x => x.Id == id);
+            var item = await context.Orders.Where(x => x.CustomerId == customerId).Include(x => x.Status).FirstOrDefaultAsync(x => x.Id == id);
+            var originStatus = item.Status.Name;
             CatchNotFound(item);
 
             using (var transaction = context.Database.BeginTransaction())
@@ -217,8 +253,9 @@ namespace Readible.Services
                     context.OrderDetails.RemoveRange(context.OrderDetails.Where(e => e.OrderId == item.Id));
                     context.Orders.Remove(item);
                     await context.SaveChangesAsync();
-
                     transaction.Commit();
+
+                    _ = orderHub.Delete(id);
                     return item;
                 }
                 catch (Exception err)
@@ -228,10 +265,19 @@ namespace Readible.Services
                 }
             } 
         }
+        public Task<Order> Delete(string id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<Order>> Fetch()
+        {
+            return await context.Orders.AsNoTracking().Include(x => x.Status).Include(x => x.Customer).ToListAsync();
+        }
 
         public async Task<IEnumerable<Order>> Fetch(int customerId)
         {
-            return await context.Orders.AsNoTracking().OrderBy(x => x.Id).Include(x => x.Status).Include(x => x.Customer).ToListAsync();
+            return await context.Orders.AsNoTracking().Where(x => x.CustomerId == customerId).OrderBy(x => x.Id).Include(x => x.Status).Include(x => x.Customer).ToListAsync();
         }
 
         public async Task<IEnumerable<Order>> Fetch(int customerId, string filter)
@@ -242,16 +288,14 @@ namespace Readible.Services
 
         public async Task<IEnumerable<Order>> Fetch(string statusName)
         {
-            var status = await GetOrderStatus(statusName.ToUpper());
-            return await context.Orders.AsNoTracking().Where(x => x.StatusId == status.Id).OrderBy(x => x.Id).Include(x => x.Status).ToListAsync();
-        }
-
-        public async Task<Order> Get(int id, int customerId)
-        {
-            var item = await context.Orders.AsNoTracking().Where(x => x.Id == id).Where(x => x.CustomerId == customerId)
-                .Include(x => x.Status).Include(x => x.Customer).Include(x => x.OrderDetails).ThenInclude(y => y.Book).FirstOrDefaultAsync();
-            CatchNotFound(item);
-            return item;
+            if (statusName == "live") {
+                var statusPending = await GetOrderStatus("PENDING");
+                var statusDelivering = await GetOrderStatus("DELIVERING");
+                return await context.Orders.AsNoTracking().Where(x => x.StatusId == statusPending.Id || x.StatusId == statusDelivering.Id).OrderBy(x => x.Id).Include(x => x.Status).ToListAsync();
+            } else {
+                var status = await GetOrderStatus(statusName.ToUpper());
+                return await context.Orders.AsNoTracking().Where(x => x.StatusId == status.Id).OrderBy(x => x.Id).Include(x => x.Status).ToListAsync();
+            }
         }
 
         public async Task<Order> GetLatestOrder()

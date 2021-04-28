@@ -38,7 +38,7 @@ namespace Readible.Controllers
         {
             try
             {
-                var item = await service.Get(id);
+                var item = await service.GetDetail(id);
                 return Ok(item);
             }
             catch (HttpResponseException err)

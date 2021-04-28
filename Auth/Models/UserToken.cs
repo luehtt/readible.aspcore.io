@@ -5,6 +5,7 @@ namespace Readible.Auth
 		public int UserId { get; set; }
         public string Username { get; set; }
         public string Email { get; set; }
+        public string ConnectId { get; set; }
         public string UserRole { get; set; }
     }
 }

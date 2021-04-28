@@ -18,6 +18,12 @@ namespace Readible.Shared
             return !(Math.Abs(value.TotalMilliseconds) > COMPARE_TOLERANCE);
         }
 
+        public static string UpperFirst(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            return text[0].ToString().ToUpper() + text.Substring(1);
+        }
+
         public static int IntParse(string number, int defaultValue = 0)
         {
             try
