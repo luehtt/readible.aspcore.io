@@ -42,9 +42,9 @@ namespace Readible.Migrations
                 throw new HttpResponseException(BAD_REQUEST_CODE);
 
             // clear existed data
-            context.Database.ExecuteSqlCommand(userTable.MakeDeleteDataCmd());
-            context.Database.ExecuteSqlCommand(managerTable.MakeDeleteDataCmd());
-            context.Database.ExecuteSqlCommand(customerTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(userTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(managerTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(customerTable.MakeDeleteDataCmd());
 
             // begin to insert
             var seeder = new UserTableSeeder(totalAdmin, totalManager, totalCustomer);
@@ -54,7 +54,7 @@ namespace Readible.Migrations
             context.SaveChanges();
 
             // perform reset sequence
-            context.Database.ExecuteSqlCommand(userTable.MakeSetSequenceCmd(totalAdmin + totalManager + totalCustomer));
+            context.Database.ExecuteSqlRaw(userTable.MakeSetSequenceCmd(totalAdmin + totalManager + totalCustomer));
             return context.Users.AsNoTracking().ToList();
         }
 
@@ -68,8 +68,8 @@ namespace Readible.Migrations
                 throw new HttpResponseException(SERVER_ERROR_CODE);
 
             // clear existed data
-            context.Database.ExecuteSqlCommand(bookTable.MakeDeleteDataCmd());
-            context.Database.ExecuteSqlCommand(categoryTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(bookTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(categoryTable.MakeDeleteDataCmd());
 
             // begin to insert
             var seeder = new BookTableSeeder(totalCategory, totalBook);
@@ -78,7 +78,7 @@ namespace Readible.Migrations
             context.SaveChanges();
 
             // perform reset sequence
-            context.Database.ExecuteSqlCommand(categoryTable.MakeSetSequenceCmd(totalCategory));
+            context.Database.ExecuteSqlRaw(categoryTable.MakeSetSequenceCmd(totalCategory));
             return context.Books.AsNoTracking().ToList();
         }
 
@@ -93,16 +93,16 @@ namespace Readible.Migrations
                 throw new HttpResponseException(SERVER_ERROR_CODE);
 
             // clear existed data
-            context.Database.ExecuteSqlCommand(bookCommentTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(bookCommentTable.MakeDeleteDataCmd());
 
             // begin to insert
             var limit = totalComment / 5;
-            var books = context.Books.FromSql(bookTable.MakeGetRandomCmd(limit)).Select(x => new Book {Isbn = x.Isbn}).ToList();
-            var customers = context.Customers.FromSql(customerTable.MakeGetRandomCmd(limit)).Select(x => new Customer {UserId = x.UserId}).ToList();
+            var books = context.Books.FromSqlRaw(bookTable.MakeGetRandomCmd(limit)).Select(x => new Book {Isbn = x.Isbn}).ToList();
+            var customers = context.Customers.FromSqlRaw(customerTable.MakeGetRandomCmd(limit)).Select(x => new Customer {UserId = x.UserId}).ToList();
 
             // perform reset sequence
             var seeder = new BookCommentTableSeeder(totalComment, books, customers);
-            context.Database.ExecuteSqlCommand(bookCommentTable.MakeSetSequenceCmd(totalComment));
+            context.Database.ExecuteSqlRaw(bookCommentTable.MakeSetSequenceCmd(totalComment));
             context.BookComments.AddRange(seeder.BookComments);
             context.SaveChanges();
             return context.BookComments.AsNoTracking().ToList();
@@ -121,21 +121,21 @@ namespace Readible.Migrations
                 throw new HttpResponseException(SERVER_ERROR_CODE);
 
             // clear existed data
-            context.Database.ExecuteSqlCommand(orderTable.MakeDeleteDataCmd());
-            context.Database.ExecuteSqlCommand(orderDetailTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(orderTable.MakeDeleteDataCmd());
+            context.Database.ExecuteSqlRaw(orderDetailTable.MakeDeleteDataCmd());
 
             // begin to insert
             var limit = total / 5;
-            var books = context.Books.FromSql(bookTable.MakeGetRandomCmd(limit)).Select(x => new Book {Isbn = x.Isbn, Price = x.Price}).ToList();
-            var customers = context.Customers.FromSql(customerTable.MakeGetRandomCmd(limit)).Select(x => new Customer {UserId = x.UserId, Fullname = x.Fullname, Address = x.Address, Phone = x.Phone}).ToList();
+            var books = context.Books.FromSqlRaw(bookTable.MakeGetRandomCmd(limit)).Select(x => new Book {Isbn = x.Isbn, Price = x.Price}).ToList();
+            var customers = context.Customers.FromSqlRaw(customerTable.MakeGetRandomCmd(limit)).Select(x => new Customer {UserId = x.UserId, Fullname = x.Fullname, Address = x.Address, Phone = x.Phone}).ToList();
             var managers = context.Managers.AsNoTracking().Select(x => new Manager {UserId = x.UserId}).ToList();
 
             // perform reset sequence
             var seeder = new OrderTableSeeder(total, multiplier, customers, managers, books);
             context.Orders.AddRange(seeder.Orders);
             context.OrderDetails.AddRange(seeder.OrderDetails);
-            context.Database.ExecuteSqlCommand(orderTable.MakeSetSequenceCmd(total));
-            context.Database.ExecuteSqlCommand(orderDetailTable.MakeSetSequenceCmd(seeder.OrderDetails.Count));
+            context.Database.ExecuteSqlRaw(orderTable.MakeSetSequenceCmd(total));
+            context.Database.ExecuteSqlRaw(orderDetailTable.MakeSetSequenceCmd(seeder.OrderDetails.Count));
             context.SaveChanges();
             return context.Orders.AsNoTracking().ToList();
         }
@@ -155,9 +155,9 @@ namespace Readible.Migrations
 
         private void RunDefineTable(DbTable dbTable)
         {
-            context.Database.ExecuteSqlCommand(dbTable.MakeDropCmd());
-            context.Database.ExecuteSqlCommand(dbTable.MakeCreateCmd());
-            if (!string.IsNullOrEmpty(dbTable.IndexColumn)) context.Database.ExecuteSqlCommand(dbTable.MakeIndexCmd());
+            context.Database.ExecuteSqlRaw(dbTable.MakeDropCmd());
+            context.Database.ExecuteSqlRaw(dbTable.MakeCreateCmd());
+            if (!string.IsNullOrEmpty(dbTable.IndexColumn)) context.Database.ExecuteSqlRaw(dbTable.MakeIndexCmd());
         }
     }
 }

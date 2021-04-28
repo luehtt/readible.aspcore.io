@@ -1,5 +1,4 @@
 using System;
-using System.Drawing;
 using System.IO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Gif;
@@ -53,11 +52,11 @@ namespace Readible.Shared
             return Convert.FromBase64String(TrimBase64Prefix(base64String));
         }
 
-        private static Size CalcSize(int imageWidth, int imageHeight, int maxWidth, int maxHeight, bool upscale)
+        private static System.Drawing.Size CalcSize(int imageWidth, int imageHeight, int maxWidth, int maxHeight, bool upscale)
         {
             var ratioWidth = imageWidth / (double) maxWidth;
             var ratioHeight = imageHeight / (double) maxHeight;
-            var size = new Size(imageWidth, imageHeight);
+            var size = new System.Drawing.Size(imageWidth, imageHeight);
             if (!upscale && size.Width <= maxWidth && size.Height <= maxHeight) return size;
             
             var ratio = ratioWidth < ratioHeight ? ratioHeight : ratioWidth;

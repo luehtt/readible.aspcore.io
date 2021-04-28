@@ -25,8 +25,10 @@ This app is written to target **readible.ng.io** as client so make sure it is ru
 
 ## NuGet package
   - [Microsoft.AspNetCore.App](https://dotnet.microsoft.com/apps/aspnet): ASP.NET Core  
-  - [Microsoft.AspNetCore.Cors 2.2.0](https://github.com/aspnet/CORS): CORS Setting   
+  - [Microsoft.AspNetCore.Cors](https://github.com/aspnet/CORS): CORS Setting   
+  - System.IdentityModel.Tokens.Jwt
+  - Microsoft.AspNetCore.Authentication.JwtBearer
   - [Npgsql.EntityFrameworkCore.PostgreSQL 2.2.4](https://github.com/npgsql/Npgsql.EntityFrameworkCore.PostgreSQL): PostgreSQL ORM   
-  - [SixLabors.ImageSharp 1.0.0](https://github.com/SixLabors/ImageSharp): Image Manipulator  
-  - [BCrypt.Net-Next 3.1.3](https://github.com/BcryptNet/bcrypt.net): Password Encryptor  
+  - [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp): Image Manipulator  
+  - [BCrypt.Net-Next](https://github.com/BcryptNet/bcrypt.net): Password Encryptor  
   - [Bogus](https://github.com/bchavez/Bogus): Data Generator   

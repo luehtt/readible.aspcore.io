@@ -3,16 +3,14 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 using Readible.Migrations;
 using Readible.Models;
 using Readible.Services;
 using Readible.Hub;
-using Readible.Hubs;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Readible
 {
@@ -29,12 +27,19 @@ namespace Readible
         public void ConfigureServices(IServiceCollection services)
         {
             // Set up Mvc return Json and ignore null value
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
-                .AddJsonOptions(options =>
-                {
-                    options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                    options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-                });
+            // Comment code in .NET CORE 2.2
+            // services.AddMvc().AddJsonOptions(options =>
+            //    {
+            //        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            //        options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+            //    });
+
+            // Set up Mvc return Json and ignore null value
+            services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.PropertyNamingPolicy = null;
+            });
 
             services.AddEntityFrameworkNpgsql().AddDbContext<DataContext>().BuildServiceProvider();
 
@@ -82,30 +87,34 @@ namespace Readible
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-                app.UseDeveloperExceptionPage();
-            else
-                app.UseHsts();
+            // Set up HTTP
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
 
-            // Add UseAuthentication to make the authentication service available to the application
-            app.UseAuthentication();
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             // Set up CORS for your application add the Microsoft.AspNetCore.Cors package to your project
             app.UseCors("AllowOrigin");
 
             // Setting up route for SignalR hubs
-            app.UseSignalR(endpoints =>
+            app.UseRouting();
+
+            // Add UseAuthentication to make the authentication service available to the application
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
             {
+                endpoints.MapControllers();
                 endpoints.MapHub<OrderHub>("/hub/orders");
                 endpoints.MapHub<CustomerOrderHub>("/hub/orders/customer");
                 endpoints.MapHub<BookCommentHub>("/hub/comments");
             });
 
             app.UseWebSockets();
-            // app.UseHttpsRedirection();
-            app.UseMvc();
         }
     }
 }
