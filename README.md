@@ -1,16 +1,17 @@
 # Readible
 
 This project was generated with .NET Core.
+Note that the DB in this sample project is NOT indexed at all.
 
 ## Development server
 Run `dotnet watch run` for a dev server. Navigate to `https://localhost:5001/`. The app will automatically reload if you change any of the source files.
 
 ## Requirement
 
-Visual Studio 2017 [(Download)](https://visualstudio.microsoft.com/downloads) (optional)  
+Visual Studio 2019 [(Download)](https://visualstudio.microsoft.com/downloads) (optional)  
 MSBuild 15 [(Download)](https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild) (built-in Visual Studio)    
-.NET core 2.2 [(Download)](https://dotnet.microsoft.com/download)  
-PostgreSQL 11 [(Download)](https://www.postgresql.org/download)
+.NET Core 5 [(Download)](https://dotnet.microsoft.com/download/dotnet/5.0)
+PostgreSQL 13 [(Download)](https://www.postgresql.org/download)
 
 ## How to run
 
