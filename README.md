@@ -11,7 +11,7 @@ Run `dotnet watch run` for a dev server. Navigate to `https://localhost:5001/`. 
 
 Visual Studio 2019 [(Download)](https://visualstudio.microsoft.com/downloads) (optional)  
 MSBuild 15 [(Download)](https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild) (built-in Visual Studio)    
-.NET Core 5 [(Download)](https://dotnet.microsoft.com/download/dotnet/5.0)
+.NET Core 5 [(Download)](https://dotnet.microsoft.com/download/dotnet/5.0)  
 PostgreSQL 13 [(Download)](https://www.postgresql.org/download)
 
 ## How to run
